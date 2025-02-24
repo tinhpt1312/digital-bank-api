@@ -4,7 +4,7 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.LoanStatus;
+import org.tinhpt.digital.type.LoanStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,7 +40,8 @@ public class Loan {
     private Account account;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 
     @Column(name = "loan_number", unique = true)
     private String loanNumber;

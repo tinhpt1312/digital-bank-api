@@ -4,7 +4,7 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.UserType;
+import org.tinhpt.digital.type.UserType;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,5 +47,6 @@ public class User {
     private UserType userType;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 }

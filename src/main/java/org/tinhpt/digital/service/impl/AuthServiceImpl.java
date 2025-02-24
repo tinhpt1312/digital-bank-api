@@ -1,13 +1,19 @@
 package org.tinhpt.digital.service.impl;
 
+
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tinhpt.digital.config.auth.JwtTokenProvider;
+import org.tinhpt.digital.dto.request.LoginRequest;
 import org.tinhpt.digital.dto.request.RegisterRequest;
 import org.tinhpt.digital.dto.request.VerifyEmailRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
+import org.tinhpt.digital.dto.response.LoginResponse;
 import org.tinhpt.digital.entity.Customer;
 import org.tinhpt.digital.entity.Role;
 import org.tinhpt.digital.entity.User;
@@ -19,6 +25,7 @@ import org.tinhpt.digital.repository.UserCodeRepository;
 import org.tinhpt.digital.repository.UserRepository;
 import org.tinhpt.digital.service.AuthService;
 import org.tinhpt.digital.service.EmailService;
+import org.tinhpt.digital.share.TokenPayload;
 import org.tinhpt.digital.type.CustomerStatus;
 import org.tinhpt.digital.type.UserCodeType;
 import org.tinhpt.digital.type.UserType;
@@ -155,6 +162,33 @@ public class AuthServiceImpl implements AuthService {
                 .responseMessage(AuthUtils.ACCOUNT_VERIFY_MESSAGE)
                 .build();
     }
+
+//    @Override
+//    public LoginResponse login(LoginRequest request) {
+//        User user = userRepository.findByUsername(request.getUsername())
+//                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+//
+//        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+//            throw new BadCredentialsException("Invalid password");
+//        }
+//
+//        if (!user.isVerify_email()) {
+//            throw new RuntimeException("Please verify your email first");
+//        }
+//
+//        TokenPayload payload = TokenPayload.builder()
+//                .userId(user.getId())
+//                .username(user.getUsername())
+//                .permissions(getPermissions(user))
+//                .build();
+//
+//        String token = tokenProvider.generateToken(payload);
+//
+//        return LoginResponse.builder()
+//                .accessToken(token)
+//                .tokenType("Bearer")
+//                .build();
+//    }
 
     private String generateVerificationCode() {
         Random random = new Random();

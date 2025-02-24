@@ -33,5 +33,6 @@ public class Permission {
     private Set<Role> roles = new HashSet<>();
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 }

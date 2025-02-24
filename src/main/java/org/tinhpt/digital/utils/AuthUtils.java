@@ -19,5 +19,5 @@ public class AuthUtils {
     public static final String ROLE_NOT_FOUND_CODE = "007";
     public static final String ROLE_NOT_FOUND_MESSAGE = "Role not found";
     public static final String SUCCESS_CODE = "008";
-    public static final String SUCCESS_MESSAGE = "Operation completed successfully";
+    public static final String SUCCESS_MESSAGE = "Please check your email to confirm.";
 }

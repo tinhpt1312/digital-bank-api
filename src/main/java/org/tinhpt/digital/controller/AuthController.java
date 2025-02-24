@@ -5,9 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.tinhpt.digital.dto.request.LoginRequest;
 import org.tinhpt.digital.dto.request.RegisterRequest;
 import org.tinhpt.digital.dto.request.VerifyEmailRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
+import org.tinhpt.digital.dto.response.LoginResponse;
 import org.tinhpt.digital.dto.response.VerifyEmailResponse;
 import org.tinhpt.digital.service.AuthService;
 
@@ -26,5 +28,15 @@ public class AuthController {
     @PostMapping("/verify")
     public BankResponse verifyEmail(@RequestBody VerifyEmailRequest request) {
         return authService.verifyEmail(request);
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(@RequestBody LoginRequest request){
+        return authService.login(request);
+    }
+
+    @PostMapping("/resend-code")
+    public BankResponse resendCode(@RequestBody String email){
+        return authService.resendEmailCode(email);
     }
 }

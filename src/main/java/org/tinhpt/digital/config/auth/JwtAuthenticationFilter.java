@@ -14,6 +14,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.tinhpt.digital.config.JwtConfig;
 import org.tinhpt.digital.share.ITokenPayload;
+import org.tinhpt.digital.type.PermissionsAction;
+import org.tinhpt.digital.type.SubjectName;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -42,7 +44,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 Collection<? extends GrantedAuthority> authorities = payload.getPermissions()
                         .stream()
-                        .map(p -> new SimpleGrantedAuthority(p.getName() + "_" + p.getAction()))
+                        .map(p -> {
+                            String subject = p.getName().toUpperCase()
+                                    .substring(0, p.getName().length() - 1);
+                            String action = p.getAction().toUpperCase();
+                            return new SimpleGrantedAuthority(subject + "_" + action);
+                        })
                         .toList();
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(payload, null, authorities);

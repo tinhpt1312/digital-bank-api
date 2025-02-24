@@ -3,8 +3,8 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.TransactionStatus;
-import org.tinhpt.digital.utils.TransactionType;
+import org.tinhpt.digital.type.TransactionStatus;
+import org.tinhpt.digital.type.TransactionType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,7 +38,8 @@ public class Transaction {
     private Account recipientAccount;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 
     @Column(name = "transaction_reference", unique = true)
     private String transactionReference;

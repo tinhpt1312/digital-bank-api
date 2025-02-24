@@ -3,7 +3,7 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.BranchStatus;
+import org.tinhpt.digital.type.BranchStatus;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -31,7 +31,8 @@ public class Branch {
     private String phoneNumber;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 
     @Column(name = "branch_code", unique = true, nullable = false)
     private String branchCode;

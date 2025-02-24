@@ -4,8 +4,7 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.EmployeeRole;
-import org.tinhpt.digital.utils.EmployeeStatus;
+import org.tinhpt.digital.type.EmployeeStatus;
 
 import java.time.LocalDate;
 
@@ -30,7 +29,8 @@ public class Employee {
     private Branch branch;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 
     @Column(name = "employee_code", unique = true, nullable = false)
     private String employeeCode;

@@ -3,8 +3,8 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.AccountStatus;
-import org.tinhpt.digital.utils.AccountType;
+import org.tinhpt.digital.type.AccountStatus;
+import org.tinhpt.digital.type.AccountType;
 
 import java.math.BigDecimal;
 
@@ -32,7 +32,8 @@ public class Account {
     private AccountStatus status;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)

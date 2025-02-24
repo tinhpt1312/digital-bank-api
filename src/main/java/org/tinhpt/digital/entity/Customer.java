@@ -4,7 +4,7 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.CustomerStatus;
+import org.tinhpt.digital.type.CustomerStatus;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -30,19 +30,20 @@ public class Customer {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String address;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String governmentId;
 
     @Enumerated(EnumType.STRING)
     private CustomerStatus status;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String phoneNumber;
 
     @Column(name = "date_of_birth")

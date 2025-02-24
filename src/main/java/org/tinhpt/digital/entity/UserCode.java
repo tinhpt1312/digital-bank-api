@@ -4,7 +4,9 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.UserCodeType;
+import org.tinhpt.digital.type.UserCodeType;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "user_codes")
@@ -23,7 +25,14 @@ public class UserCode {
     private String code;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private UserCodeType type;
+
+    @Column(nullable = true)
+    private Date usedAt;
+
+    @Column(nullable = false)
+    private Date expiredAt;
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
@@ -31,5 +40,6 @@ public class UserCode {
 
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 }

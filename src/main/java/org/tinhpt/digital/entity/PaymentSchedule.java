@@ -3,7 +3,7 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.utils.PaymentStatus;
+import org.tinhpt.digital.type.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,5 +35,6 @@ public class PaymentSchedule {
     private LocalDateTime paymentDate;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 }

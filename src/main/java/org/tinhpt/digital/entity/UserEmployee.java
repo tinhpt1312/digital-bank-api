@@ -25,5 +25,6 @@ public class UserEmployee {
     private Employee employee;
 
     @Embedded
-    private Audit audit;
+    @Builder.Default
+    private Audit audit = new Audit();
 }

@@ -19,12 +19,16 @@ import java.io.IOException;
 import java.util.Collection;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
 
     private final JwtConfig jwtConfig;
+
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, JwtConfig jwtConfig) {
+        this.tokenProvider = tokenProvider;
+        this.jwtConfig = jwtConfig;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

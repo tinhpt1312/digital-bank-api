@@ -3,12 +3,14 @@ package org.tinhpt.digital.service.impl;
 
 
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tinhpt.digital.config.auth.JwtTokenProvider;
+import org.tinhpt.digital.dto.PermissionDto;
 import org.tinhpt.digital.dto.request.LoginRequest;
 import org.tinhpt.digital.dto.request.RegisterRequest;
 import org.tinhpt.digital.dto.request.VerifyEmailRequest;
@@ -31,10 +33,8 @@ import org.tinhpt.digital.type.UserCodeType;
 import org.tinhpt.digital.type.UserType;
 import org.tinhpt.digital.utils.AuthUtils;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -111,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
 
         userCodeRepository.save(userCode);
 
-//        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
         return BankResponse.builder()
                 .responseCode(AuthUtils.SUCCESS_CODE)
@@ -163,32 +163,73 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-//    @Override
-//    public LoginResponse login(LoginRequest request) {
-//        User user = userRepository.findByUsername(request.getUsername())
-//                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-//
-//        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-//            throw new BadCredentialsException("Invalid password");
-//        }
-//
-//        if (!user.isVerify_email()) {
-//            throw new RuntimeException("Please verify your email first");
-//        }
-//
-//        TokenPayload payload = TokenPayload.builder()
-//                .userId(user.getId())
-//                .username(user.getUsername())
-//                .permissions(getPermissions(user))
-//                .build();
-//
-//        String token = tokenProvider.generateToken(payload);
-//
-//        return LoginResponse.builder()
-//                .accessToken(token)
-//                .tokenType("Bearer")
-//                .build();
-//    }
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Invalid password");
+        }
+
+        if (!user.isVerify_email()) {
+            return LoginResponse.builder()
+                    .accessToken(null)
+                    .message("Please check email is verify")
+                    .build();
+        }
+
+        TokenPayload payload = TokenPayload.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .permissions(getPermissions(user))
+                .build();
+
+        String token = tokenProvider.generateToken(payload);
+
+        return LoginResponse.builder()
+                .accessToken(token)
+                .message("Login is successfully")
+                .build();
+    }
+
+    @Override
+    public BankResponse resendEmailCode(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (user.isVerify_email()) {
+            return BankResponse.builder()
+                    .responseCode("009")
+                    .responseMessage("Email already verified")
+                    .build();
+        }
+
+        String verificationCode = generateVerificationCode();
+        UserCode userCode = UserCode.builder()
+                .code(verificationCode)
+                .type(UserCodeType.REGISTER)
+                .user(user)
+                .build();
+
+        userCodeRepository.save(userCode);
+
+        emailService.sendVerificationEmail(email, verificationCode);
+
+        return BankResponse.builder()
+                .responseCode("203")
+                .responseMessage("Code are send to Email is successfully! Please check email")
+                .build();
+    }
+
+    private Set<PermissionDto> getPermissions(User user) {
+        return user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(permission -> PermissionDto.builder()
+                        .name(permission.getSubject().getSubject())
+                        .action(permission.getAction().getAction())
+                        .build())
+                .collect(Collectors.toSet());
+    }
 
     private String generateVerificationCode() {
         Random random = new Random();

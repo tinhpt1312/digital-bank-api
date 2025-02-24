@@ -4,6 +4,8 @@ package org.tinhpt.digital.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
+import org.tinhpt.digital.type.PermissionsAction;
+import org.tinhpt.digital.type.SubjectName;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -20,11 +22,13 @@ public class Permission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action", nullable = false)
+    private PermissionsAction action;
 
-    @Column(nullable = false)
-    private String action;
+    @Column(name = "subject", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private SubjectName subject;
 
     @Column
     private Boolean isActive;

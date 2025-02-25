@@ -9,7 +9,4 @@ public class GoogleUserInfo {
     private String email;
     private String name;
     private String pictureUrl;
-    private String locale;
-    private String familyName;
-    private String givenName;
 }

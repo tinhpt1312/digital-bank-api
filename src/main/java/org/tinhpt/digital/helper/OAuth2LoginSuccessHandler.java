@@ -51,7 +51,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
                         User newUser = User.builder()
                                 .email(googleUserInfo.getEmail())
-                                .verify_email(true)
+                                .emailVerified(true)
                                 .provider(ProviderLogin.GOOGLE.toString())
                                 .image(googleUserInfo.getPictureUrl())
                                 .roles(Set.of(userRole))

@@ -3,11 +3,9 @@ package org.tinhpt.digital.service.impl;
 
 
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tinhpt.digital.config.auth.JwtTokenProvider;
@@ -17,23 +15,19 @@ import org.tinhpt.digital.dto.request.RegisterRequest;
 import org.tinhpt.digital.dto.request.VerifyEmailRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
 import org.tinhpt.digital.dto.response.LoginResponse;
-import org.tinhpt.digital.entity.Customer;
 import org.tinhpt.digital.entity.Role;
 import org.tinhpt.digital.entity.User;
 import org.tinhpt.digital.entity.UserCode;
 import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.repository.CustomerRepository;
 import org.tinhpt.digital.repository.RoleRepository;
 import org.tinhpt.digital.repository.UserCodeRepository;
 import org.tinhpt.digital.repository.UserRepository;
 import org.tinhpt.digital.service.AuthService;
 import org.tinhpt.digital.service.EmailService;
 import org.tinhpt.digital.share.TokenPayload;
-import org.tinhpt.digital.type.CustomerStatus;
 import org.tinhpt.digital.type.UserCodeType;
 import org.tinhpt.digital.type.UserType;
 import org.tinhpt.digital.utils.AuthUtils;
-import org.tinhpt.digital.utils.GoogleUserInfo;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,7 +40,6 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final UserCodeRepository userCodeRepository;
-    private final CustomerRepository customerRepository;
     private final EmailService emailService;
 
     @Override
@@ -70,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
-                .verify_email(false)
+                .emailVerified(false)
                 .userType(UserType.CUSTOMER)
                 .build();
 
@@ -83,17 +76,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         userRepository.save(user);
-
-        Customer customer = Customer.builder()
-                .user(user)
-                .fullName(request.getFullName())
-                .status(CustomerStatus.INACTIVE)
-                .audit(Audit.builder()
-                        .createdBy(user)
-                        .build())
-                .build();
-
-        customerRepository.save(customer);
 
         Date now = new Date();
         Calendar calendar = Calendar.getInstance();
@@ -153,7 +135,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = userCode.getUser();
-        user.setVerify_email(true);
+        user.setEmailVerified(true);
         userRepository.save(user);
 
         userCode.setUsedAt(new Date());
@@ -174,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid password");
         }
 
-        if (!user.isVerify_email()) {
+        if (!user.isEmailVerified()) {
             return LoginResponse.builder()
                     .accessToken(null)
                     .message("Please check email is verify")
@@ -199,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
     public BankResponse resendEmailCode(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (user.isVerify_email()) {
+        if (user.isEmailVerified()) {
             return BankResponse.builder()
                     .responseCode("009")
                     .responseMessage("Email already verified")

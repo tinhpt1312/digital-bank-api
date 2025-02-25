@@ -31,8 +31,8 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column
-    private boolean verify_email;
+    @Column()
+    private boolean emailVerified;
 
     @Column
     private String provider;

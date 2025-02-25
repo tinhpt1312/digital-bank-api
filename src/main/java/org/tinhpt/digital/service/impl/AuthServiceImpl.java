@@ -7,6 +7,7 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tinhpt.digital.config.auth.JwtTokenProvider;
@@ -32,6 +33,7 @@ import org.tinhpt.digital.type.CustomerStatus;
 import org.tinhpt.digital.type.UserCodeType;
 import org.tinhpt.digital.type.UserType;
 import org.tinhpt.digital.utils.AuthUtils;
+import org.tinhpt.digital.utils.GoogleUserInfo;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -220,6 +222,8 @@ public class AuthServiceImpl implements AuthService {
                 .responseMessage("Code are send to Email is successfully! Please check email")
                 .build();
     }
+
+
 
     private Set<PermissionDto> getPermissions(User user) {
         return user.getRoles().stream()

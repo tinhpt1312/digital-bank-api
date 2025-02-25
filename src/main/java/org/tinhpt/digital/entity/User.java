@@ -25,7 +25,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     @Column(unique = true, nullable = false)
@@ -33,6 +33,12 @@ public class User {
 
     @Column
     private boolean verify_email;
+
+    @Column
+    private String provider;
+
+    @Column
+    private String image;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

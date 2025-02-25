@@ -16,4 +16,8 @@ public enum PermissionsAction {
         this.action = action;
     }
 
+    public boolean canDo(PermissionsAction requiredAction) {
+        if (this == MANAGE) return true;
+        return this == requiredAction;
+    }
 }

@@ -25,11 +25,18 @@ public class JwtTokenProvider {
 
     private final JwtConfig jwtConfig;
 
-    public String generateToken(ITokenPayload payload){
+    public String generateToken(ITokenPayload payload) {
         Date now = new Date();
+        Date expiryDate = calculateExpiryDate(now);
 
-        Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration());
+        return buildToken(payload, now, expiryDate);
+    }
 
+    private Date calculateExpiryDate(Date now) {
+        return new Date(now.getTime() + jwtConfig.getExpiration());
+    }
+
+    private String buildToken(ITokenPayload payload, Date now, Date expiryDate) {
         return Jwts.builder()
                 .setSubject(payload.getUserName())
                 .claim("userId", payload.getUserId())
@@ -40,26 +47,35 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    private Set<PermissionDto> extractPermissions(Claims claims){
+    private Set<PermissionDto> extractPermissions(Claims claims) {
         List<Map<String, String>> permissions = claims.get("permissions", List.class);
-
         return permissions.stream()
-                .map(p -> PermissionDto.builder()
-                        .name(p.get("name"))
-                        .action(p.get("action"))
-                        .build())
+                .map(this::convertToPermissionDto)
                 .collect(Collectors.toSet());
     }
 
+    private PermissionDto convertToPermissionDto(Map<String, String> permission) {
+        return PermissionDto.builder()
+                .name(permission.get("name"))
+                .action(permission.get("action"))
+                .build();
+    }
+
     public ITokenPayload getPayloadFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
+        Claims claims = parseToken(token);
+        Set<PermissionDto> permissions = extractPermissions(claims);
+        return buildTokenPayload(claims, permissions);
+    }
+
+    private Claims parseToken(String token) {
+        return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
 
-        Set<PermissionDto> permissions = extractPermissions(claims);
-
+    private TokenPayload buildTokenPayload(Claims claims, Set<PermissionDto> permissions) {
         return TokenPayload.builder()
                 .userId(claims.get("userId", Long.class))
                 .username(claims.getSubject())
@@ -72,11 +88,11 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public boolean validateToken(String token){
-        try{
-           Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
-           return true;
-        }catch (Exception e){
+    public boolean validateToken(String token) {
+        try {
+            parseToken(token);
+            return true;
+        } catch (Exception e) {
             return false;
         }
     }

@@ -2,74 +2,111 @@ package org.tinhpt.digital.config.auth;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.tinhpt.digital.config.JwtConfig;
 import org.tinhpt.digital.share.ITokenPayload;
-import org.tinhpt.digital.type.PermissionsAction;
-import org.tinhpt.digital.type.SubjectName;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
     private final JwtTokenProvider tokenProvider;
+    private final Set<String> skipUrls = Set.of(
+            "/api/auth/login",
+            "/api/auth/register",
+            "/oauth2",
+            "/login",
+            "/api/auth/google/login-success",
+            "/api/auth/google/login-failure"
+    );
 
-    private final JwtConfig jwtConfig;
-
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, JwtConfig jwtConfig) {
-        this.tokenProvider = tokenProvider;
-        this.jwtConfig = jwtConfig;
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return skipUrls.stream().anyMatch(path::startsWith);
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        try{
-            String jwt = getJwtFromRequest(request);
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        try {
+            String token = extractToken(request);
+            if (token != null && tokenProvider.validateToken(token)) {
+                ITokenPayload payload = tokenProvider.getPayloadFromToken(token);
 
-            if(StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)){
-                ITokenPayload payload = tokenProvider.getPayloadFromToken(jwt);
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    List<SimpleGrantedAuthority> authorities = convertPermissionsToAuthorities(payload);
 
-                Collection<? extends GrantedAuthority> authorities = payload.getPermissions()
-                        .stream()
-                        .map(p -> {
-                            String subject = p.getName().toUpperCase()
-                                    .substring(0, p.getName().length() - 1);
-                            String action = p.getAction().toUpperCase();
-                            return new SimpleGrantedAuthority(subject + "_" + action);
-                        })
-                        .toList();
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(payload, null, authorities);
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(payload, null, authorities);
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
-        }catch (Exception e){
-            logger.error("Could not set user authentication in security context", e);
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+        }
+
+        if (isOAuth2Request(request)) {
+            Collections.list(request.getHeaderNames())
+                    .forEach(headerName -> log.debug("{}: {}", headerName, request.getHeader(headerName)));
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private String getJwtFromRequest(HttpServletRequest request){
-        String bearerToken = request.getHeader(jwtConfig.getHeaderString());
+    private boolean isOAuth2Request(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri.contains("oauth2") || uri.contains("login/oauth2");
+    }
 
-        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getTokenPrefix())){
-            return bearerToken.substring(jwtConfig.getTokenPrefix().length() + 1);
+    private String extractToken(HttpServletRequest request) {
+        String tokenFromCookie = extractTokenFromCookie(request);
+        if (tokenFromCookie != null) {
+            return tokenFromCookie;
         }
 
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
         return null;
+    }
+
+    private String extractTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            return Arrays.stream(cookies)
+                    .filter(cookie -> "jwt".equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    private List<SimpleGrantedAuthority> convertPermissionsToAuthorities(ITokenPayload payload) {
+        return payload.getPermissions().stream()
+                .map(permission -> new SimpleGrantedAuthority(
+                        permission.getName() + "_" + permission.getAction()))
+                .collect(Collectors.toList());
     }
 }

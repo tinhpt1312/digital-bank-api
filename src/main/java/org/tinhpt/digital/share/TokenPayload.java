@@ -33,18 +33,4 @@ public class TokenPayload implements ITokenPayload{
     public Set<PermissionDto> getPermissions() {
         return permissions;
     }
-
-//    private String id;
-//    private String roleId;
-//    private String provider;
-//
-//    @Builder.Default
-//    private List<Permission> permissions = new ArrayList<>();
-//
-//    @Builder
-//    @Data
-//    public static class Permission {
-//        private String action;
-//        private String subject;
-//    }
 }

@@ -2,7 +2,10 @@ package org.tinhpt.digital.service.impl;
 
 
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,7 +29,6 @@ import org.tinhpt.digital.service.AuthService;
 import org.tinhpt.digital.service.EmailService;
 import org.tinhpt.digital.share.TokenPayload;
 import org.tinhpt.digital.type.UserCodeType;
-import org.tinhpt.digital.type.UserType;
 import org.tinhpt.digital.utils.AuthUtils;
 
 import java.util.*;
@@ -59,21 +61,21 @@ public class AuthServiceImpl implements AuthService {
                     .build();
         }
 
-        User user = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .email(request.getEmail())
-                .emailVerified(false)
-                .userType(UserType.CUSTOMER)
-                .build();
-
-        Optional<Role> customerRole = roleRepository.findByName("CUSTOMER");
-        if (customerRole.isEmpty()) {
+        Optional<Role> userRole = roleRepository.findByName("USER");
+        if (userRole.isEmpty()) {
             return BankResponse.builder()
                     .responseCode(AuthUtils.ROLE_NOT_FOUND_CODE)
                     .responseMessage(AuthUtils.ROLE_NOT_FOUND_MESSAGE)
                     .build();
         }
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .email(request.getEmail())
+                .emailVerified(false)
+                .role(userRole.get())
+                .build();
 
         userRepository.save(user);
 
@@ -95,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
 
         userCodeRepository.save(userCode);
 
-        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+//        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
         return BankResponse.builder()
                 .responseCode(AuthUtils.SUCCESS_CODE)
@@ -139,6 +141,10 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
 
         userCode.setUsedAt(new Date());
+        userCode.setAudit(Audit.builder()
+                        .updatedAt(new Date())
+                        .updatedBy(user)
+                        .build());
         userCodeRepository.save(userCode);
 
         return BankResponse.builder()
@@ -148,7 +154,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, HttpServletResponse response) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -170,6 +176,13 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         String token = tokenProvider.generateToken(payload);
+
+        Cookie cookie = new Cookie("jwt", token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(24*60*60);
+        response.addCookie(cookie);
 
         return LoginResponse.builder()
                 .accessToken(token)
@@ -197,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
 
         userCodeRepository.save(userCode);
 
-        emailService.sendVerificationEmail(email, verificationCode);
+//        emailService.sendVerificationEmail(email, verificationCode);
 
         return BankResponse.builder()
                 .responseCode("203")
@@ -205,14 +218,28 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    @Override
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwt", "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok("Logout successfully");
+    }
 
 
     private Set<PermissionDto> getPermissions(User user) {
-        return user.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
+        if (user.getRole() == null) {
+            return Collections.emptySet();
+        }
+
+        return user.getRole().getPermissions().stream()
                 .map(permission -> PermissionDto.builder()
-                        .name(permission.getSubject().getSubject())
-                        .action(permission.getAction().getAction())
+                        .name(permission.getSubject().toString())
+                        .action(permission.getAction().toString())
                         .build())
                 .collect(Collectors.toSet());
     }

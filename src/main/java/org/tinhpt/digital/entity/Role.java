@@ -6,6 +6,7 @@ import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -24,8 +25,8 @@ public class Role {
     @Column(unique = true, nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "roles")
-    private Set<User> users = new HashSet<>();
+    @OneToMany(mappedBy = "role")
+    private List<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

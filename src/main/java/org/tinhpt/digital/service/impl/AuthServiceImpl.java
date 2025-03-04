@@ -219,7 +219,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<String> logout(HttpServletResponse response) {
+    public BankResponse logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("jwt", "");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
@@ -227,7 +227,10 @@ public class AuthServiceImpl implements AuthService {
         cookie.setMaxAge(0);
         response.addCookie(cookie);
 
-        return ResponseEntity.ok("Logout successfully");
+        return BankResponse.builder()
+                .responseCode("201")
+                .responseMessage("Logout is successfully")
+                .build();
     }
 
 

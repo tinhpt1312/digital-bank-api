@@ -29,6 +29,10 @@ public class PermissionAspect {
                     String[] parts = authority.split("_");
                     SubjectName subject = SubjectName.valueOf(parts[0]);
                     PermissionsAction action = PermissionsAction.valueOf(parts[1]);
+//
+//                    if (action == PermissionsAction.MANAGE) {
+//                        return true;
+//                    }
 
                     return subject.canAccess(requirePermission.subject()) &&
                             action.canDo(requirePermission.action());

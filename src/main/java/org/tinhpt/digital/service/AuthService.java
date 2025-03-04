@@ -17,6 +17,6 @@ public interface AuthService {
 
     BankResponse resendEmailCode(String email);
 
-    ResponseEntity<String>logout(HttpServletResponse response);
+    BankResponse logout(HttpServletResponse response);
 
 }

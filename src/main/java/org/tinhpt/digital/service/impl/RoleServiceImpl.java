@@ -1,16 +1,17 @@
 package org.tinhpt.digital.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.RoleDTO;
 import org.tinhpt.digital.dto.request.QueryRoleDto;
 import org.tinhpt.digital.dto.request.RoleRequest;
+import org.tinhpt.digital.dto.request.RolesDeleteDto;
 import org.tinhpt.digital.dto.response.BankResponse;
 import org.tinhpt.digital.entity.Permission;
 import org.tinhpt.digital.entity.Role;
@@ -21,10 +22,8 @@ import org.tinhpt.digital.repository.RoleRepository;
 import org.tinhpt.digital.repository.UserRepository;
 import org.tinhpt.digital.service.RoleService;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -79,10 +78,73 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public BankResponse updateRole(Long id, RoleRequest request, Long userId) {
+    public BankResponse updateRole(Long id, RoleRequest request, Long userId) throws BadRequestException {
+        Role role = roleRepository.findById(id).orElseThrow(() -> new BadRequestException("Role is not found"));
+
+        role.getPermissions().clear();
+
+        if(request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()){
+            List<Permission> permissions = permissionRepository.findAllById(request.getPermissionIds());
+            role.setPermissions(new HashSet<>(permissions));
+        }
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        role.setName(request.getName());
+        role.setAudit(Audit.builder()
+                        .updatedAt(new Date())
+                        .updatedBy(user)
+                .build());
+
+        roleRepository.save(role);
+
         return BankResponse.builder()
                 .responseCode("201")
                 .responseMessage("Update role is successfully")
+                .build();
+    }
+
+    @Override
+    public BankResponse deleteRole(Long id, Long userId) throws BadRequestException {
+        Role role = roleRepository.findById(id).orElseThrow(() -> new BadRequestException("Role is not found"));
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        role.setAudit(Audit.builder()
+                        .deletedAt(new Date())
+                        .deletedBy(user)
+                .build());
+        roleRepository.save(role);
+
+        return BankResponse.builder()
+                .responseCode("201")
+                .responseMessage("Delete role is successfully")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public BankResponse deleteMultipleRoles(RolesDeleteDto dto, Long userId) throws BadRequestException {
+        List<Long> ids = dto.getIds();
+
+        if(ids.isEmpty()){
+            List<Role> roles = roleRepository.findAllById(ids);
+            if(roles.size() != ids.size()){
+                throw new BadRequestException("Some roles not found");
+            }
+
+            for(Role role: roles){
+                role.getPermissions().clear();
+            }
+
+            roleRepository.saveAll(roles);
+        }
+
+        roleRepository.markRolesAsDeleted(ids, LocalDateTime.now(), userId);
+
+        return BankResponse.builder()
+                .responseCode("201")
+                .responseMessage("Delete multiple role is successfully")
                 .build();
     }
 }

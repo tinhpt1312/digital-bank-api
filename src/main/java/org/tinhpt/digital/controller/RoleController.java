@@ -2,6 +2,7 @@ package org.tinhpt.digital.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tinhpt.digital.annotation.CurrentUser;
@@ -10,11 +11,14 @@ import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.RoleDTO;
 import org.tinhpt.digital.dto.request.QueryRoleDto;
 import org.tinhpt.digital.dto.request.RoleRequest;
+import org.tinhpt.digital.dto.request.RolesDeleteDto;
 import org.tinhpt.digital.dto.response.BankResponse;
 import org.tinhpt.digital.service.RoleService;
 import org.tinhpt.digital.share.TokenPayload;
 import org.tinhpt.digital.type.PermissionsAction;
 import org.tinhpt.digital.type.SubjectName;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/role")
@@ -43,6 +47,27 @@ public class RoleController {
 
         PagedResponse<RoleDTO> roles = roleService.findAll(dto);
         return ResponseEntity.ok(roles);
+    }
+
+    @PatchMapping("/{id}")
+    @RequirePermission(subject = SubjectName.ROLE, action = PermissionsAction.UPDATE)
+    public BankResponse updateRole(@PathVariable Long id, @CurrentUser TokenPayload tokenPayload, @RequestBody RoleRequest request) throws BadRequestException {
+        Long userId = tokenPayload.getUserId();
+        return roleService.updateRole(id, request, userId);
+    }
+
+    @DeleteMapping()
+    @RequirePermission(subject = SubjectName.ROLE, action = PermissionsAction.UPDATE)
+    public BankResponse deleteMultipleRoles(@RequestBody RolesDeleteDto dto, @CurrentUser TokenPayload tokenPayload) throws BadRequestException {
+        Long userId = tokenPayload.getUserId();
+        return roleService.deleteMultipleRoles(dto, userId);
+    }
+
+    @DeleteMapping("/{id}")
+    @RequirePermission(subject = SubjectName.ROLE, action = PermissionsAction.DELETE)
+    public BankResponse deleteRole(@PathVariable Long id, @CurrentUser TokenPayload tokenPayload) throws BadRequestException {
+        Long userId = tokenPayload.getUserId();
+        return roleService.deleteRole(id, userId);
     }
 
 }

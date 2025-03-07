@@ -24,4 +24,9 @@ public class AwsS3Controller {
     public BankResponse generatePresignedUrl(@RequestParam("name") String multipartFile){
         return awsS3Service.generatePresignedUrl(multipartFile);
     }
+
+    @DeleteMapping("/delete")
+    public BankResponse deletedFile(@RequestParam String fileName){
+        return awsS3Service.deletedFile(fileName);
+    }
 }

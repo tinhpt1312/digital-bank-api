@@ -1,7 +1,6 @@
 package org.tinhpt.digital.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -74,5 +73,24 @@ public class AwsS3ServiceImpl implements AwsS3Service {
                 .responseMessage(presignUrl.toString())
                 .build();
     }
+
+    @Override
+    public BankResponse deletedFile(String fileName) {
+        try{
+
+            s3Client.deleteObject(builder -> builder
+                    .bucket(BUCKET_NAME)
+                    .key(fileName)
+                    .build());
+
+            return BankResponse.builder()
+                    .responseCode("200")
+                    .responseMessage("File deleted successfully: " + fileName)
+                    .build();
+        }catch (Exception e){
+            throw new RuntimeException("Error deleting file from s3");
+        }
+    }
+
 
 }

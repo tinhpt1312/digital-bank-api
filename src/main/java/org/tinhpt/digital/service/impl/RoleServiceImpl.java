@@ -93,10 +93,10 @@ public class RoleServiceImpl implements RoleService {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         role.setName(request.getName());
-        role.setAudit(Audit.builder()
-                        .updatedAt(new Date())
-                        .updatedBy(user)
-                .build());
+
+        Audit audit = role.getAudit();
+        audit.setUpdatedBy(user);
+        audit.setUpdatedAt(new Date());
 
         roleRepository.save(role);
 
@@ -111,11 +111,12 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        role.getPermissions().clear();
 
-        role.setAudit(Audit.builder()
-                        .deletedAt(new Date())
-                        .deletedBy(user)
-                .build());
+        Audit audit = role.getAudit();
+        audit.setDeletedBy(user);
+        audit.setDeletedAt(new Date());
+
         roleRepository.save(role);
 
         return BankResponse.builder()
@@ -128,21 +129,25 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public BankResponse deleteMultipleRoles(RolesDeleteDto dto, Long userId) throws BadRequestException {
         List<Long> ids = dto.getIds();
-
-        if(ids.isEmpty()){
-            List<Role> roles = roleRepository.findAllById(ids);
-            if(roles.size() != ids.size()){
-                throw new BadRequestException("Some roles not found");
-            }
-
-            for(Role role: roles){
-                role.getPermissions().clear();
-            }
-
-            roleRepository.saveAll(roles);
+        if(ids == null || ids.isEmpty()){
+            throw new BadRequestException("List of role ids is empty or null");
         }
 
-        roleRepository.markRolesAsDeleted(ids, LocalDateTime.now(), userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        List<Role> roles = roleRepository.findAllById(ids);
+
+        if(roles.size() != ids.size()){
+            throw new BadRequestException("Some roles not found");
+        }
+
+        for(Role role: roles){
+            role.getPermissions().clear();
+            Audit audit = role.getAudit();
+            audit.setDeletedBy(user);
+            audit.setDeletedAt(new Date());
+            roleRepository.save(role);
+        }
+
 
         return BankResponse.builder()
                 .responseCode("201")

@@ -6,6 +6,7 @@ import lombok.*;
 import org.tinhpt.digital.entity.common.Audit;
 import org.tinhpt.digital.type.UserCodeType;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Entity

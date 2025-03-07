@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.RoleDTO;
 import org.tinhpt.digital.dto.request.QueryRoleDto;
@@ -53,7 +55,7 @@ public class RoleServiceImpl implements RoleService {
                     .build();
         }
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         Role newRole = Role.builder()
                 .name(request.getName())
@@ -88,7 +90,7 @@ public class RoleServiceImpl implements RoleService {
             role.setPermissions(new HashSet<>(permissions));
         }
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         role.setName(request.getName());
         role.setAudit(Audit.builder()
@@ -106,9 +108,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public BankResponse deleteRole(Long id, Long userId) throws BadRequestException {
-        Role role = roleRepository.findById(id).orElseThrow(() -> new BadRequestException("Role is not found"));
+        Role role = roleRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         role.setAudit(Audit.builder()
                         .deletedAt(new Date())

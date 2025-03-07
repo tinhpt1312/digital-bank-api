@@ -7,6 +7,7 @@ import org.tinhpt.digital.entity.common.Audit;
 import org.tinhpt.digital.type.PermissionsAction;
 import org.tinhpt.digital.type.SubjectName;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 

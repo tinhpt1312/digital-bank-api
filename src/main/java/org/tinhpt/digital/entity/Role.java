@@ -3,8 +3,10 @@ package org.tinhpt.digital.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import net.minidev.json.annotate.JsonIgnore;
 import org.tinhpt.digital.entity.common.Audit;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +27,7 @@ public class Role {
     @Column(unique = true, nullable = false)
     private String name;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "role")
     private List<User> users;
 

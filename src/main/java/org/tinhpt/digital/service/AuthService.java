@@ -1,6 +1,7 @@
 package org.tinhpt.digital.service;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.tinhpt.digital.dto.request.LoginRequest;
 import org.tinhpt.digital.dto.request.RegisterRequest;

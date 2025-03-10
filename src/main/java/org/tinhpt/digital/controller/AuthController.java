@@ -3,6 +3,7 @@ package org.tinhpt.digital.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.web.bind.annotation.*;
 import org.tinhpt.digital.dto.request.LoginRequest;
 import org.tinhpt.digital.dto.request.RegisterRequest;

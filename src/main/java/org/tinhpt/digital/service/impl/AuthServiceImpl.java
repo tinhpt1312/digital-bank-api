@@ -5,12 +5,15 @@ package org.tinhpt.digital.service.impl;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.tinhpt.digital.config.auth.JwtTokenProvider;
 import org.tinhpt.digital.dto.PermissionDto;
 import org.tinhpt.digital.dto.request.LoginRequest;
@@ -159,7 +162,10 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid password");
+            return LoginResponse.builder()
+                    .accessToken(null)
+                    .message("Invalid password")
+                    .build();
         }
 
         if (!user.isEmailVerified()) {

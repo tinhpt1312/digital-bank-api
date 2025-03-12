@@ -32,15 +32,8 @@ public class AccountRequestController {
     }
 
 
-    @PostMapping("/approve/{id}")
-    @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
-    public BankResponse approveRequest(@CurrentUser TokenPayload tokenPayload, @PathVariable("id") Long requestId){
-        Long userId = tokenPayload.getUserId();
 
-        return accountRequestService.approveRequest(requestId, userId);
-    }
-
-    @PatchMapping("/balance/{id}")
+    @PostMapping("/balance/{id}")
     public BankResponse submitBalanceUpdateRequest(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload
             ,@RequestBody() UpdateBalanceAccountDTO updateBalanceAccountDTO){
         Long userId = tokenPayload.getUserId();
@@ -48,10 +41,19 @@ public class AccountRequestController {
         return accountService.submitBalanceUpdateRequest(updateBalanceAccountDTO, id, userId);
     }
 
-    @PatchMapping("/unlock/{id}")
+    @PostMapping("/unlock/{id}")
     public BankResponse unlockAccountRequest(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload){
         Long userId = tokenPayload.getUserId();
 
         return accountService.submitUnlockAccountRequest(id, userId);
+    }
+
+
+    @PatchMapping("/approve/{id}")
+    @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
+    public BankResponse approveRequest(@CurrentUser TokenPayload tokenPayload, @PathVariable("id") Long requestId){
+        Long userId = tokenPayload.getUserId();
+
+        return accountRequestService.approveRequest(requestId, userId);
     }
 }

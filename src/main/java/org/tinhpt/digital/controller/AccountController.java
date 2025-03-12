@@ -69,21 +69,6 @@ public class AccountController {
         return accountService.updateAccount(id, updateAccountDTO, userId);
     }
 
-    @PatchMapping("/request-balance/user/{id}")
-    public BankResponse submitBalanceUpdateRequest(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload
-            ,@RequestBody() UpdateBalanceAccountDTO updateBalanceAccountDTO){
-        Long userId = tokenPayload.getUserId();
-
-        return accountService.submitBalanceUpdateRequest(updateBalanceAccountDTO, id, userId);
-    }
-
-    @PatchMapping("/request-unlock/user/{id}")
-    public BankResponse unlockAccountRequest(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload){
-        Long userId = tokenPayload.getUserId();
-
-        return accountService.submitUnlockAccountRequest(id, userId);
-    }
-
     @PatchMapping("/unlock/{id}")
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
     public AccountDTO unlockAccount(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload){

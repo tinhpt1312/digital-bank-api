@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
 
         userCodeRepository.save(userCode);
 
-//        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
         return BankResponse.builder()
                 .responseCode(AuthUtils.SUCCESS_CODE)
@@ -216,7 +216,7 @@ public class AuthServiceImpl implements AuthService {
 
         userCodeRepository.save(userCode);
 
-//        emailService.sendVerificationEmail(email, verificationCode);
+        emailService.sendVerificationEmail(email, verificationCode);
 
         return BankResponse.builder()
                 .responseCode("203")

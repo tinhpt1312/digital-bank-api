@@ -8,16 +8,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.tinhpt.digital.dto.AccountDTO;
 import org.tinhpt.digital.dto.request.CreateAccount;
+import org.tinhpt.digital.dto.request.QueryAccountDTO;
 import org.tinhpt.digital.dto.request.UpdateAccountDTO;
+import org.tinhpt.digital.dto.request.UpdateBalanceAccountDTO;
 import org.tinhpt.digital.dto.response.BankResponse;
 import org.tinhpt.digital.entity.Account;
+import org.tinhpt.digital.entity.AccountRequest;
 import org.tinhpt.digital.entity.User;
 import org.tinhpt.digital.entity.common.Audit;
 import org.tinhpt.digital.repository.AccountRepository;
+import org.tinhpt.digital.repository.AccountRequestRepository;
 import org.tinhpt.digital.repository.UserRepository;
 import org.tinhpt.digital.service.AccountService;
+import org.tinhpt.digital.share.Strategy.RequestStrategy;
 import org.tinhpt.digital.type.AccountStatus;
 import org.tinhpt.digital.type.AccountType;
+import org.tinhpt.digital.type.RequestStatus;
+import org.tinhpt.digital.type.RequestType;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -31,6 +38,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final AccountRequestRepository accountRequestRepository;
 
     private String generationAccountNumber(){
         Random random = new Random();
@@ -98,11 +106,11 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountDTO getAccountByAccountNumber(String accountNumber){
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not is present with number: " + accountNumber));
-
-        return convertToDTO(account);
+    public AccountDTO getAccountByQuery(QueryAccountDTO queryAccountDTO){
+        return accountRepository.findById(queryAccountDTO.getId()).or(() ->
+                accountRepository.findByAccountNumber(queryAccountDTO.getAccountNumber()))
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
     }
 
     @Transactional
@@ -124,4 +132,135 @@ public class AccountServiceImpl implements AccountService {
         Account updatedAccount = accountRepository.save(account);
         return convertToDTO(updatedAccount);
     }
+
+    @Transactional
+    @Override
+    public AccountDTO updateBalance(Long id, UpdateBalanceAccountDTO updateBalanceAccountDTO, Long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + id));
+
+        if(account.getStatus().equals(AccountStatus.INACTIVE.toString()) ||
+                account.getStatus().equals(AccountStatus.FROZEN.toString())
+        ){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account is locked");
+        }
+
+        BigDecimal newBalance = account.getBalance().add(updateBalanceAccountDTO.getAmount());
+
+        if(newBalance.compareTo(BigDecimal.ZERO) < 0){
+            throw new IllegalArgumentException("Insufficient funds");
+        }
+
+        account.setBalance(newBalance);
+
+        Audit audit = account.getAudit();
+        audit.setUpdatedAt(new Date());
+        audit.setUpdatedBy(user);
+
+        Account updateAccount = accountRepository.save(account);
+        return convertToDTO(updateAccount);
+    }
+
+    @Transactional
+    @Override
+    public BankResponse deleteAccount(Long id, Long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + id));
+
+        Audit audit = account.getAudit();
+        audit.setDeletedAt(new Date());
+        audit.setDeletedBy(user);
+
+        accountRepository.save(account);
+
+        return BankResponse.builder()
+                .responseCode("202")
+                .responseMessage("Delete account is successfully")
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public AccountDTO unlockAccount(Long id, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + id));
+
+        if (account.getStatus().equals(AccountStatus.ACTIVE.toString())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account is already active");
+        }
+
+        account.setStatus(AccountStatus.ACTIVE.toString());
+
+        Audit audit = account.getAudit();
+        audit.setUpdatedAt(new Date());
+        audit.setUpdatedBy(user);
+
+        Account updatedAccount = accountRepository.save(account);
+        return convertToDTO(updatedAccount);
+    }
+
+    @Override
+    public BankResponse submitBalanceUpdateRequest(UpdateBalanceAccountDTO updateBalanceAccountDTO, Long id, Long userId){
+
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + id));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!account.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have permission for this account");
+        }
+
+        AccountRequest accountRequest = AccountRequest.builder()
+                .account(account)
+                .requestedBy(user)
+                .requestType(RequestType.UPDATE_BALANCE.toString())
+                .details(updateBalanceAccountDTO.getAmount().toString())
+                .status(RequestStatus.PENDING)
+                .createdAt(new Date())
+                .build();
+
+        accountRequestRepository.save(accountRequest);
+
+        return BankResponse.builder()
+                .responseCode("202")
+                .responseMessage("Send request to Admin is successfully! Wait for Admin approved")
+                .build();
+    }
+
+    @Override
+    public BankResponse submitUnlockAccountRequest(Long id, Long userId){
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + id));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!account.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have permission for this account");
+        }
+
+        AccountRequest accountRequest = AccountRequest.builder()
+                .account(account)
+                .requestedBy(user)
+                .requestType(RequestType.UNLOCK_ACCOUNT.toString())
+                .details("Unlock account for this user")
+                .status(RequestStatus.PENDING)
+                .createdAt(new Date())
+                .build();
+
+        accountRequestRepository.save(accountRequest);
+
+        return BankResponse.builder()
+                .responseCode("202")
+                .responseMessage("Send request to Admin is successfully! Wait for Admin approved")
+                .build();
+    }
+
 }

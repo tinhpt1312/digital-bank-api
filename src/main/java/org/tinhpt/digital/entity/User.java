@@ -62,6 +62,14 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<KYC> kycs;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "requestedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AccountRequest> requestedAccountRequests;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "approvedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AccountRequest> approvedAccountRequests;
+
 
     @Embedded
     @Builder.Default

@@ -51,6 +51,10 @@ public class Account {
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Card> cards;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AccountRequest> accountRequests;
+
     @Embedded
     @Builder.Default
     private Audit audit = new Audit();

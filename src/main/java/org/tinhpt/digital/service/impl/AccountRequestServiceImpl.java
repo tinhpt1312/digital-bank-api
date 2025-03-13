@@ -5,19 +5,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.tinhpt.digital.dto.AccountDTO;
 import org.tinhpt.digital.dto.AccountRequestDTO;
+import org.tinhpt.digital.dto.request.TransactionRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
-import org.tinhpt.digital.entity.Account;
 import org.tinhpt.digital.entity.AccountRequest;
 import org.tinhpt.digital.entity.User;
-import org.tinhpt.digital.helper.RequestStrategyFactory;
+import org.tinhpt.digital.factory.RequestStrategyFactory;
 import org.tinhpt.digital.repository.AccountRequestRepository;
 import org.tinhpt.digital.repository.UserRepository;
 import org.tinhpt.digital.service.AccountRequestService;
-import org.tinhpt.digital.share.Strategy.RequestStrategy;
-import org.tinhpt.digital.type.AccountStatus;
-import org.tinhpt.digital.type.AccountType;
+import org.tinhpt.digital.service.TransactionService;
+import org.tinhpt.digital.strategy.RequestStrategy;
 import org.tinhpt.digital.type.RequestStatus;
 import org.tinhpt.digital.type.RequestType;
 
@@ -33,10 +31,11 @@ public class AccountRequestServiceImpl implements AccountRequestService {
     private final AccountRequestRepository accountRequestRepository;
     private final RequestStrategyFactory requestStrategyFactory;
     private final UserRepository userRepository;
+    private final TransactionService transactionService;
 
     @Override
     @Transactional
-    public BankResponse approveRequest(Long requestId, Long adminId) {
+    public BankResponse approveRequest(Long requestId, Long adminId) throws Exception {
         AccountRequest accountRequest = accountRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
 
@@ -47,12 +46,19 @@ public class AccountRequestServiceImpl implements AccountRequestService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request already processed");
         }
 
-        RequestStrategy strategy = requestStrategyFactory.getStrategy(accountRequest.getRequestType());
+        RequestStrategy strategy = requestStrategyFactory.getStrategy(RequestType.valueOf(accountRequest.getRequestType()));
         if(strategy == null){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported request type");
         }
 
-        strategy.process(accountRequest, accountRequest.getAccount().getUser().getId());
+        strategy.processRequest(accountRequest, accountRequest.getAccount().getUser().getId());
+
+        if(strategy.isTransactionRequired()){
+            TransactionRequest transactionRequest = strategy.buildTransactionRequest(accountRequest, user.getId());
+            if(transactionRequest != null){
+                transactionService.createTransaction(transactionRequest, user.getId());
+            }
+        }
 
         accountRequest.setStatus(RequestStatus.APPROVED);
         accountRequest.setApprovedBy(user);

@@ -1,9 +1,10 @@
-package org.tinhpt.digital.helper;
+package org.tinhpt.digital.factory;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tinhpt.digital.share.Strategy.RequestStrategy;
+import org.tinhpt.digital.strategy.RequestStrategy;
+import org.tinhpt.digital.type.RequestType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 @Component
 public class RequestStrategyFactory {
-    private final Map<String, RequestStrategy> strategyMap = new HashMap<>();
+    private final Map<RequestType, RequestStrategy> strategyMap = new HashMap<>();
 
     @Autowired
     public RequestStrategyFactory(List<RequestStrategy> strategies){
@@ -20,7 +21,7 @@ public class RequestStrategyFactory {
         }
     }
 
-    public RequestStrategy getStrategy(String requestType){
+    public RequestStrategy getStrategy(RequestType requestType){
         return strategyMap.get(requestType);
     }
 }

@@ -35,8 +35,11 @@ public class Transaction {
     @Column(name = "currency", nullable = false)
     private String currency;
 
-    @ManyToOne
-    @JoinColumn(name = "destination_account_id")
+    @Column(name = "destination_account_id")
+    private Long destinationAccountId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "destination_account_id", insertable = false, updatable = false)
     private Account destinationAccount;
 
     @Column(name = "status", nullable = false)

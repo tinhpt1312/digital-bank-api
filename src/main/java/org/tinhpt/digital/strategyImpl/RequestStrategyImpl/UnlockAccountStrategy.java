@@ -1,14 +1,15 @@
-package org.tinhpt.digital.share;
+package org.tinhpt.digital.strategyImpl.RequestStrategyImpl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.tinhpt.digital.dto.request.TransactionRequest;
 import org.tinhpt.digital.entity.Account;
 import org.tinhpt.digital.entity.AccountRequest;
 import org.tinhpt.digital.entity.common.Audit;
 import org.tinhpt.digital.repository.AccountRepository;
-import org.tinhpt.digital.share.Strategy.RequestStrategy;
+import org.tinhpt.digital.strategy.RequestStrategy;
 import org.tinhpt.digital.type.AccountStatus;
 import org.tinhpt.digital.type.RequestType;
 
@@ -22,7 +23,7 @@ public class UnlockAccountStrategy implements RequestStrategy {
 
 
     @Override
-    public void process(AccountRequest request, Long userId) {
+    public void processRequest(AccountRequest request, Long userId) {
         Long accountId = request.getAccount().getId();
 
         Account account = accountRepository.findById(accountId)
@@ -41,7 +42,17 @@ public class UnlockAccountStrategy implements RequestStrategy {
     }
 
     @Override
-    public String getRequestType() {
-        return RequestType.UNLOCK_ACCOUNT.toString();
+    public RequestType getRequestType() {
+        return RequestType.UNLOCK_ACCOUNT;
+    }
+
+    @Override
+    public TransactionRequest buildTransactionRequest(AccountRequest accountRequest, Long userId) throws Exception {
+        return null;
+    }
+
+    @Override
+    public boolean isTransactionRequired() {
+        return false;
     }
 }

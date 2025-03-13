@@ -7,10 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.tinhpt.digital.dto.AccountDTO;
-import org.tinhpt.digital.dto.request.CreateAccount;
-import org.tinhpt.digital.dto.request.QueryAccountDTO;
-import org.tinhpt.digital.dto.request.UpdateAccountDTO;
-import org.tinhpt.digital.dto.request.UpdateBalanceAccountDTO;
+import org.tinhpt.digital.dto.request.*;
 import org.tinhpt.digital.dto.response.BankResponse;
 import org.tinhpt.digital.entity.Account;
 import org.tinhpt.digital.entity.AccountRequest;
@@ -20,11 +17,8 @@ import org.tinhpt.digital.repository.AccountRepository;
 import org.tinhpt.digital.repository.AccountRequestRepository;
 import org.tinhpt.digital.repository.UserRepository;
 import org.tinhpt.digital.service.AccountService;
-import org.tinhpt.digital.share.Strategy.RequestStrategy;
-import org.tinhpt.digital.type.AccountStatus;
-import org.tinhpt.digital.type.AccountType;
-import org.tinhpt.digital.type.RequestStatus;
-import org.tinhpt.digital.type.RequestType;
+import org.tinhpt.digital.service.TransactionService;
+import org.tinhpt.digital.type.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -39,6 +33,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final AccountRequestRepository accountRequestRepository;
+    private final TransactionService transactionService;
 
     private String generationAccountNumber(){
         Random random = new Random();
@@ -146,19 +141,22 @@ public class AccountServiceImpl implements AccountService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account is locked");
         }
 
-        BigDecimal newBalance = account.getBalance().add(updateBalanceAccountDTO.getAmount());
-
-        if(newBalance.compareTo(BigDecimal.ZERO) < 0){
-            throw new IllegalArgumentException("Insufficient funds");
-        }
-
-        account.setBalance(newBalance);
+        TransactionRequest transactionRequest = TransactionRequest.builder()
+                .amount(updateBalanceAccountDTO.getAmount())
+                .transactionType(TransactionType.DEPOSIT)
+                .currency(account.getCurrency())
+                .description("Deposit for account number: " + account.getAccountNumber())
+                .accountId(account.getId())
+                .destinationAccountId(null)
+                .build();
 
         Audit audit = account.getAudit();
         audit.setUpdatedAt(new Date());
         audit.setUpdatedBy(user);
 
         Account updateAccount = accountRepository.save(account);
+
+        transactionService.createTransaction(transactionRequest, userId);
         return convertToDTO(updateAccount);
     }
 

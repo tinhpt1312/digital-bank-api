@@ -6,6 +6,6 @@ import org.tinhpt.digital.dto.response.BankResponse;
 import java.util.List;
 
 public interface AccountRequestService {
-    BankResponse approveRequest(Long requestId, Long adminId);
+    BankResponse approveRequest(Long requestId, Long adminId) throws Exception;
     List<AccountRequestDTO> getAllRequest();
 }

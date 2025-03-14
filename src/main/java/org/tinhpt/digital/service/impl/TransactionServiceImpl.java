@@ -1,11 +1,15 @@
 package org.tinhpt.digital.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.TransactionDTO;
+import org.tinhpt.digital.dto.request.QueryTransactionDTO;
 import org.tinhpt.digital.dto.request.TransactionRequest;
 import org.tinhpt.digital.entity.Account;
 import org.tinhpt.digital.entity.Transaction;
@@ -50,7 +54,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public TransactionDTO createTransaction(TransactionRequest transactionRequest, Long userId) {
+    public void createTransaction(TransactionRequest transactionRequest, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         Account sourceAccount = accountRepository.findById(transactionRequest.getAccountId())
@@ -78,8 +82,7 @@ public class TransactionServiceImpl implements TransactionService {
                         .build())
                 .build();
 
-        try{
-
+        try {
             TransactionStrategy strategy = strategyFactory.getTransaction(transactionRequest.getTransactionType());
             transaction.setStatus(TransactionStatus.COMPLETED.toString());
             strategy.processTransaction(transactionRequest, sourceAccount, destinationAccount, transaction);
@@ -92,11 +95,21 @@ public class TransactionServiceImpl implements TransactionService {
 
             Transaction saveTransaction = transactionRepository.save(transaction);
 
-            return convertToDTO(saveTransaction);
-        }catch (Exception e){
+            convertToDTO(saveTransaction);
+        } catch (Exception e) {
             transaction.setStatus(TransactionStatus.FAILED.toString());
             transactionRepository.save(transaction);
             throw new RuntimeException("Transaction failed: " + e.getMessage());
         }
+    }
+
+    @Override
+    public PagedResponse<TransactionDTO> findAll(QueryTransactionDTO dto) {
+        Page<Transaction> transactions = transactionRepository.findAllTransactions(dto.getSearch(),
+                PageRequest.of(dto.getPage(), dto.getTake()));
+
+        Page<TransactionDTO> transactionDTOPage = transactions.map(this::convertToDTO);
+
+        return new PagedResponse<>(transactionDTOPage);
     }
 }

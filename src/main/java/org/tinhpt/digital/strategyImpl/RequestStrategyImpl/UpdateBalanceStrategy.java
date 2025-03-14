@@ -70,6 +70,6 @@ public class UpdateBalanceStrategy implements RequestStrategy {
 
     @Override
     public boolean isTransactionRequired() {
-        return false;
+        return true;
     }
 }

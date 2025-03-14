@@ -1,11 +1,15 @@
 package org.tinhpt.digital.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.tinhpt.digital.dto.AccountRequestDTO;
+import org.tinhpt.digital.dto.PagedResponse;
+import org.tinhpt.digital.dto.request.QueryAccountRequestDTO;
 import org.tinhpt.digital.dto.request.TransactionRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
 import org.tinhpt.digital.entity.AccountRequest;
@@ -20,8 +24,6 @@ import org.tinhpt.digital.type.RequestStatus;
 import org.tinhpt.digital.type.RequestType;
 
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -73,9 +75,12 @@ public class AccountRequestServiceImpl implements AccountRequestService {
     }
 
     @Override
-    public List<AccountRequestDTO> getAllRequest(){
-        return accountRequestRepository.findAll().stream()
-                .map(this::convertToDTO).collect(Collectors.toList());
+    public PagedResponse<AccountRequestDTO> getAllRequest(QueryAccountRequestDTO dto){
+        Page<AccountRequest> accountRequests = accountRequestRepository.findAllRequests(PageRequest.of(dto.getPage(), dto.getTake()));
+
+        Page<AccountRequestDTO> accountRequestDTOPage = accountRequests.map(this::convertToDTO);
+
+        return new PagedResponse<>(accountRequestDTOPage);
     }
 
     private AccountRequestDTO convertToDTO(AccountRequest accountRequest) {
@@ -85,6 +90,7 @@ public class AccountRequestServiceImpl implements AccountRequestService {
                 .requestType(RequestType.valueOf(String.valueOf(accountRequest.getRequestType())))
                 .accountId(accountRequest.getAccount().getId())
                 .details(accountRequest.getDetails())
+                .requestStatus(accountRequest.getStatus())
                 .build();
     }
 }

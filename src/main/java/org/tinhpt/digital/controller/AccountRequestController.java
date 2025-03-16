@@ -66,4 +66,12 @@ public class AccountRequestController {
 
         return accountRequestService.approveRequest(requestId, userId);
     }
+
+    @PatchMapping("/reject/{id}")
+    @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
+    public BankResponse rejectRequest(@CurrentUser TokenPayload tokenPayload, @PathVariable("id") Long requestId) throws Exception {
+        Long userId = tokenPayload.getUserId();
+
+        return accountRequestService.rejectRequest(requestId, userId);
+    }
 }

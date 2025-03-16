@@ -23,7 +23,7 @@ public interface AccountService {
 
     AccountDTO updateAccount(Long id, UpdateAccountDTO updateAccountDTO, Long userId);
 
-    AccountDTO updateBalance(Long id, UpdateBalanceAccountDTO updateBalanceAccountDTO, Long userId);
+    AccountDTO withDrawlBalance(UpdateBalanceAccountDTO updateBalanceAccountDTO, Long id, Long userId);
 
     BankResponse deleteAccount(Long id, Long userId);
 

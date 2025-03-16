@@ -32,11 +32,8 @@ import java.util.Date;
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionStrategyFactory strategyFactory;
-
     private final AccountRepository accountRepository;
-
     private final UserRepository userRepository;
-
     private final TransactionRepository transactionRepository;
 
     private TransactionDTO convertToDTO(Transaction transaction) {

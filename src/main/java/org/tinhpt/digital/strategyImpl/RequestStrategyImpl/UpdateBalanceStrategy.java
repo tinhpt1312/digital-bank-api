@@ -30,10 +30,6 @@ public class UpdateBalanceStrategy implements RequestStrategy {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
 
-        if(account.getUser().getId().longValue() != userId.longValue()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not permission in this account");
-        }
-
         BigDecimal amount = new BigDecimal(request.getDetails());
         BigDecimal newBalance = account.getBalance().add(amount);
 

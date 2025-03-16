@@ -67,7 +67,7 @@ public class AccountServiceImpl implements AccountService {
                 .currency(createAccount.getCurrency())
                 .user(user)
                 .accountNumber(generationAccountNumber())
-                .status(AccountStatus.INACTIVE.toString())
+                .status(AccountStatus.ACTIVE.toString())
                 .balance(BigDecimal.ZERO)
                 .audit(Audit.builder()
                         .createdBy(user)
@@ -130,7 +130,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Transactional
     @Override
-    public AccountDTO updateBalance(Long id, UpdateBalanceAccountDTO updateBalanceAccountDTO, Long userId){
+    public AccountDTO withDrawlBalance(UpdateBalanceAccountDTO updateBalanceAccountDTO, Long id, Long userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + id));
@@ -141,9 +141,13 @@ public class AccountServiceImpl implements AccountService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account is locked");
         }
 
+        if(account.getBalance().compareTo(updateBalanceAccountDTO.getAmount()) < 0){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient balance for withdrawal");
+        }
+
         TransactionRequest transactionRequest = TransactionRequest.builder()
                 .amount(updateBalanceAccountDTO.getAmount())
-                .transactionType(TransactionType.DEPOSIT)
+                .transactionType(TransactionType.WITHDRAWAL)
                 .currency(account.getCurrency())
                 .description("Deposit for account number: " + account.getAccountNumber())
                 .accountId(account.getId())
@@ -155,8 +159,8 @@ public class AccountServiceImpl implements AccountService {
         audit.setUpdatedBy(user);
 
         Account updateAccount = accountRepository.save(account);
-
         transactionService.createTransaction(transactionRequest, userId);
+
         return convertToDTO(updateAccount);
     }
 
@@ -231,6 +235,7 @@ public class AccountServiceImpl implements AccountService {
                 .responseMessage("Send request to Admin is successfully! Wait for Admin approved")
                 .build();
     }
+
 
     @Override
     public BankResponse submitUnlockAccountRequest(Long id, Long userId){

@@ -29,10 +29,6 @@ public class UnlockAccountStrategy implements RequestStrategy {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
 
-        if(account.getUser().getId().longValue() != userId.longValue()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not permission in this account");
-        }
-
         account.setStatus(AccountStatus.ACTIVE.toString());
 
         Audit audit = account.getAudit();

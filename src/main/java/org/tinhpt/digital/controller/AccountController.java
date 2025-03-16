@@ -17,7 +17,6 @@ import org.tinhpt.digital.share.TokenPayload;
 import org.tinhpt.digital.type.PermissionsAction;
 import org.tinhpt.digital.type.SubjectName;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -27,7 +26,6 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
-
 
     @GetMapping()
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.READ)
@@ -77,12 +75,11 @@ public class AccountController {
         return accountService.unlockAccount(id, userId);
     }
 
-    @PatchMapping("/balance/{id}")
-    @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
-    public AccountDTO updateBalance(@PathVariable() Long id, @RequestBody() UpdateBalanceAccountDTO updateBalanceAccountDTO, @CurrentUser TokenPayload tokenPayload){
+    @PatchMapping("/withdrawal/{id}")
+    public AccountDTO withDrawlBalance(@PathVariable() Long id, @RequestBody() UpdateBalanceAccountDTO updateBalanceAccountDTO, @CurrentUser TokenPayload tokenPayload){
         Long userId = tokenPayload.getUserId();
 
-        return accountService.updateBalance(id, updateBalanceAccountDTO, userId);
+        return accountService.withDrawlBalance(updateBalanceAccountDTO, id, userId);
     }
 
     @DeleteMapping("/{id}")

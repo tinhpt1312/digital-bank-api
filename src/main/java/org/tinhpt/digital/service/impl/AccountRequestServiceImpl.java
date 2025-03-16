@@ -12,6 +12,7 @@ import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.request.QueryAccountRequestDTO;
 import org.tinhpt.digital.dto.request.TransactionRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
+import org.tinhpt.digital.entity.Account;
 import org.tinhpt.digital.entity.AccountRequest;
 import org.tinhpt.digital.entity.User;
 import org.tinhpt.digital.factory.RequestStrategyFactory;
@@ -22,6 +23,7 @@ import org.tinhpt.digital.service.TransactionService;
 import org.tinhpt.digital.strategy.RequestStrategy;
 import org.tinhpt.digital.type.RequestStatus;
 import org.tinhpt.digital.type.RequestType;
+import org.tinhpt.digital.type.TransactionStatus;
 
 import java.util.Date;
 
@@ -38,11 +40,9 @@ public class AccountRequestServiceImpl implements AccountRequestService {
     @Override
     @Transactional
     public BankResponse approveRequest(Long requestId, Long adminId) throws Exception {
-        AccountRequest accountRequest = accountRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
+        AccountRequest accountRequest = getAccountRequestById(requestId);
 
-        User user = userRepository.findById(adminId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User user = getUserById(adminId);
 
         if(!accountRequest.getStatus().equals(RequestStatus.PENDING)){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request already processed");
@@ -74,6 +74,48 @@ public class AccountRequestServiceImpl implements AccountRequestService {
                 .build();
     }
 
+    @Transactional
+    @Override
+    public BankResponse rejectRequest(Long requestId, Long adminId) throws Exception {
+        AccountRequest accountRequest = getAccountRequestById(requestId);
+
+        User user = getUserById(adminId);
+
+        if(!accountRequest.getStatus().equals(RequestStatus.PENDING)){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request already processed");
+        }
+
+        RequestStrategy strategy = requestStrategyFactory.getStrategy(RequestType.valueOf(accountRequest.getRequestType()));
+        if(strategy == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported request type");
+        }
+
+        if (strategy.isTransactionRequired()) {
+            TransactionRequest transactionRequest = strategy.buildTransactionRequest(accountRequest, user.getId());
+            if (transactionRequest != null) {
+                transactionRequest.setTransactionStatus(TransactionStatus.FAILED);
+                transactionService.createTransaction(transactionRequest, user.getId());
+            }
+        }
+
+        accountRequest.setStatus(RequestStatus.REJECTED);
+
+        return BankResponse.builder()
+                .responseCode("404")
+                .responseMessage(accountRequest.getRequestType() + " is failed")
+                .build();
+    }
+
+    private User getUserById(Long id){
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    private AccountRequest getAccountRequestById(Long requestId){
+        return accountRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
+    }
+
     @Override
     public PagedResponse<AccountRequestDTO> getAllRequest(QueryAccountRequestDTO dto){
         Page<AccountRequest> accountRequests = accountRequestRepository.findAllRequests(PageRequest.of(dto.getPage(), dto.getTake()));
@@ -88,6 +130,7 @@ public class AccountRequestServiceImpl implements AccountRequestService {
                 .id(accountRequest.getId())
                 .requestBy(accountRequest.getRequestedBy().getId())
                 .requestType(RequestType.valueOf(String.valueOf(accountRequest.getRequestType())))
+                .requestStatus(accountRequest.getStatus())
                 .accountId(accountRequest.getAccount().getId())
                 .details(accountRequest.getDetails())
                 .requestStatus(accountRequest.getStatus())

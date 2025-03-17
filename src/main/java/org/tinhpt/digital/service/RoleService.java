@@ -1,17 +1,13 @@
 package org.tinhpt.digital.service;
 
 import org.apache.coyote.BadRequestException;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
 import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.RoleDTO;
 import org.tinhpt.digital.dto.request.QueryRoleDto;
 import org.tinhpt.digital.dto.request.RoleRequest;
 import org.tinhpt.digital.dto.request.RolesDeleteDto;
 import org.tinhpt.digital.dto.response.BankResponse;
-import org.tinhpt.digital.entity.Role;
 
-import java.util.List;
 
 public interface RoleService {
 

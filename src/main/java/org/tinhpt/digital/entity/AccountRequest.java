@@ -5,10 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.tinhpt.digital.entity.common.Audit;
 import org.tinhpt.digital.type.RequestStatus;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
@@ -45,6 +43,7 @@ public class AccountRequest {
     @JoinColumn(name = "admin_id", nullable = true)
     private User approvedBy;
 
+    @Builder.Default
     private Date createdAt = new Date();
 
     private Date approvedAt;

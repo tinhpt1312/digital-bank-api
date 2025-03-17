@@ -7,7 +7,6 @@ import org.tinhpt.digital.entity.common.Audit;
 import org.tinhpt.digital.type.PermissionsAction;
 import org.tinhpt.digital.type.SubjectName;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,8 +34,9 @@ public class Permission {
     private Boolean isActive;
 
     @ManyToMany(mappedBy = "permissions")
+    @Builder.Default
     private Set<Role> roles = new HashSet<>();
-
+    
     @Embedded
     @Builder.Default
     private Audit audit = new Audit();

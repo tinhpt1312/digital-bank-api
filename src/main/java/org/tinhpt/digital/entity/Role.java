@@ -6,7 +6,6 @@ import lombok.*;
 import net.minidev.json.annotate.JsonIgnore;
 import org.tinhpt.digital.entity.common.Audit;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +36,7 @@ public class Role {
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
+    @Builder.Default
     private Set<Permission> permissions = new HashSet<>();
 
     @Embedded

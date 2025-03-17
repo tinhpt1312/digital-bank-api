@@ -18,7 +18,6 @@ import org.tinhpt.digital.share.TokenPayload;
 import org.tinhpt.digital.type.PermissionsAction;
 import org.tinhpt.digital.type.SubjectName;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/role")

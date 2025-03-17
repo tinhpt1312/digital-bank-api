@@ -48,7 +48,8 @@ public class JwtTokenProvider {
     }
 
     private Set<PermissionDto> extractPermissions(Claims claims) {
-        List<Map<String, String>> permissions = claims.get("permissions", List.class);
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> permissions = (List<Map<String, String>>) claims.get("permissions", List.class);
         return permissions.stream()
                 .map(this::convertToPermissionDto)
                 .collect(Collectors.toSet());

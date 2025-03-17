@@ -12,7 +12,6 @@ import org.tinhpt.digital.dto.PagedResponse;
 import org.tinhpt.digital.dto.request.QueryAccountRequestDTO;
 import org.tinhpt.digital.dto.request.TransactionRequest;
 import org.tinhpt.digital.dto.response.BankResponse;
-import org.tinhpt.digital.entity.Account;
 import org.tinhpt.digital.entity.AccountRequest;
 import org.tinhpt.digital.entity.User;
 import org.tinhpt.digital.factory.RequestStrategyFactory;

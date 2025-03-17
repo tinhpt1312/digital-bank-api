@@ -6,7 +6,6 @@ import lombok.*;
 import net.minidev.json.annotate.JsonIgnore;
 import org.tinhpt.digital.entity.common.Audit;
 
-import java.io.Serializable;
 import java.util.List;
 
 @Entity

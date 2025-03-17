@@ -1,14 +1,16 @@
 package org.tinhpt.digital.controller;
 
-
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.method.P;
 import org.springframework.web.bind.annotation.*;
 import org.tinhpt.digital.annotation.CurrentUser;
 import org.tinhpt.digital.annotation.RequirePermission;
 import org.tinhpt.digital.dto.AccountDTO;
 import org.tinhpt.digital.dto.request.CreateAccount;
 import org.tinhpt.digital.dto.request.QueryAccountDTO;
+import org.tinhpt.digital.dto.request.TransferBankDTO;
 import org.tinhpt.digital.dto.request.UpdateAccountDTO;
 import org.tinhpt.digital.dto.request.UpdateBalanceAccountDTO;
 import org.tinhpt.digital.dto.response.BankResponse;
@@ -29,12 +31,12 @@ public class AccountController {
 
     @GetMapping()
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.READ)
-    public List<AccountDTO> getAllAccounts(){
+    public List<AccountDTO> getAllAccounts() {
         return accountService.getAllAccounts();
     }
 
     @GetMapping("/user")
-    public List<AccountDTO> getAccountByUserId(@CurrentUser TokenPayload tokenPayload){
+    public List<AccountDTO> getAccountByUserId(@CurrentUser TokenPayload tokenPayload) {
         Long userId = tokenPayload.getUserId();
 
         return accountService.getAllAccountsByUserId(userId);
@@ -42,18 +44,18 @@ public class AccountController {
 
     @GetMapping("/search")
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.READ)
-    public AccountDTO getAccountByQuery(@RequestParam() QueryAccountDTO queryAccountDTO){
+    public AccountDTO getAccountByQuery(@RequestParam() QueryAccountDTO queryAccountDTO) {
         return accountService.getAccountByQuery(queryAccountDTO);
     }
 
     @GetMapping("/{id}")
-    public AccountDTO getAccountById(@PathVariable Long id){
+    public AccountDTO getAccountById(@PathVariable Long id) {
         return accountService.getAccountById(id);
     }
 
-
     @PostMapping()
-    public AccountDTO createAccount(@CurrentUser TokenPayload tokenPayload, @RequestBody() CreateAccount createAccount){
+    public AccountDTO createAccount(@CurrentUser TokenPayload tokenPayload,
+            @RequestBody() CreateAccount createAccount) {
         Long userId = tokenPayload.getUserId();
 
         return accountService.createAccount(createAccount, userId);
@@ -61,7 +63,8 @@ public class AccountController {
 
     @PatchMapping("/{id}")
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
-    public AccountDTO updateAccount(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload,@RequestBody() UpdateAccountDTO updateAccountDTO){
+    public AccountDTO updateAccount(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload,
+            @RequestBody() UpdateAccountDTO updateAccountDTO) {
         Long userId = tokenPayload.getUserId();
 
         return accountService.updateAccount(id, updateAccountDTO, userId);
@@ -69,22 +72,31 @@ public class AccountController {
 
     @PatchMapping("/unlock/{id}")
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.UPDATE)
-    public AccountDTO unlockAccount(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload){
+    public AccountDTO unlockAccount(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload) {
         Long userId = tokenPayload.getUserId();
 
         return accountService.unlockAccount(id, userId);
     }
 
     @PatchMapping("/withdrawal/{id}")
-    public AccountDTO withDrawlBalance(@PathVariable() Long id, @RequestBody() UpdateBalanceAccountDTO updateBalanceAccountDTO, @CurrentUser TokenPayload tokenPayload){
+    public AccountDTO withDrawlBalance(@PathVariable() Long id,
+            @RequestBody() UpdateBalanceAccountDTO updateBalanceAccountDTO, @CurrentUser TokenPayload tokenPayload) {
         Long userId = tokenPayload.getUserId();
 
         return accountService.withDrawlBalance(updateBalanceAccountDTO, id, userId);
     }
 
+    @PatchMapping("/transfer")
+    public BankResponse transferBalance(@RequestBody() TransferBankDTO transferBankDTO,
+            @CurrentUser TokenPayload tokenPayload) {
+        Long userId = tokenPayload.getUserId();
+
+        return accountService.transferBank(transferBankDTO, userId);
+    }
+
     @DeleteMapping("/{id}")
     @RequirePermission(subject = SubjectName.ACCOUNT, action = PermissionsAction.DELETE)
-    public BankResponse deleteAccount(@PathVariable() Long id,@CurrentUser TokenPayload tokenPayload){
+    public BankResponse deleteAccount(@PathVariable() Long id, @CurrentUser TokenPayload tokenPayload) {
         Long userId = tokenPayload.getUserId();
 
         return accountService.deleteAccount(id, userId);

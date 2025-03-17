@@ -3,7 +3,6 @@ package org.tinhpt.digital.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.security.access.method.P;
 import org.springframework.web.bind.annotation.*;
 import org.tinhpt.digital.annotation.CurrentUser;
 import org.tinhpt.digital.annotation.RequirePermission;

@@ -274,7 +274,6 @@ public class AccountServiceImpl implements AccountService {
         @Transactional
         @Override
         public BankResponse transferBank(TransferBankDTO transferBankDTO, Long userId) {
-                User user = findUserById(userId);
 
                 Account sourceAccount = findAccountById(transferBankDTO.getSourceACcount());
                 Account targetAccount = findAccountById(transferBankDTO.getTargetAccount());
@@ -306,11 +305,6 @@ public class AccountServiceImpl implements AccountService {
                                 .amount(transferBankDTO.getAmount())
                                 .build();
 
-                Audit audit = sourceAccount.getAudit();
-                audit.setUpdatedAt(new Date());
-                audit.setUpdatedBy(user);
-
-                Account updateAccount = accountRepository.save(sourceAccount);
                 transactionService.createTransaction(transactionRequest, userId);
 
                 return BankResponse.builder()

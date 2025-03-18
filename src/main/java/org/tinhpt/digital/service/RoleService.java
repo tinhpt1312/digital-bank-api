@@ -8,7 +8,6 @@ import org.tinhpt.digital.dto.request.RoleRequest;
 import org.tinhpt.digital.dto.request.RolesDeleteDto;
 import org.tinhpt.digital.dto.response.BankResponse;
 
-
 public interface RoleService {
 
     PagedResponse<RoleDTO> findAll(QueryRoleDto dto);
@@ -20,4 +19,6 @@ public interface RoleService {
     BankResponse deleteRole(Long id, Long userId) throws BadRequestException;
 
     BankResponse deleteMultipleRoles(RolesDeleteDto dto, Long userId) throws BadRequestException;
+
+    BankResponse getRoleById(Long id);
 }

@@ -10,7 +10,14 @@ public enum SubjectName {
     ROLE("roles"),
     ACCOUNT("accounts"),
     TRANSACTION("transactions"),
-    LOAN("loans");
+    PERMISSION("permissions"),
+    BENEFICIARY("beneficiaries"),
+    REPORT("reports"),
+    NOTIFICATION("notifications"),
+    SETTINGS("settings"),
+    KYC("kyc"),
+    LOAN("loans"),
+    CARD("cards");
 
     private final String subject;
 
@@ -19,7 +26,8 @@ public enum SubjectName {
     }
 
     public boolean canAccess(SubjectName requiredSubject) {
-        if (this == ALL) return true;
+        if (this == ALL)
+            return true;
         return this == requiredSubject;
     }
 }

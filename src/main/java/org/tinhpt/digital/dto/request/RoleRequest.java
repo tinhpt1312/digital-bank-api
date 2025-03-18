@@ -1,6 +1,5 @@
 package org.tinhpt.digital.dto.request;
 
-
 import lombok.*;
 
 import java.util.Set;
@@ -13,6 +12,5 @@ public class RoleRequest {
     private String name;
 
     private Set<Long> permissionIds;
-
 
 }

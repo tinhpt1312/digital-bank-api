@@ -1,6 +1,9 @@
 package org.tinhpt.digital.service.impl;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -24,8 +27,7 @@ import org.tinhpt.digital.strategy.TransactionStrategy;
 import org.tinhpt.digital.type.TransactionStatus;
 import org.tinhpt.digital.type.TransactionType;
 
-import java.util.Date;
-
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -45,25 +47,31 @@ public class TransactionServiceImpl implements TransactionService {
                 .status(TransactionStatus.valueOf(transaction.getStatus()))
                 .transactionType(TransactionType.valueOf(transaction.getTransactionType()))
                 .accountId(transaction.getAccount().getId())
-                .destinationAccountId(transaction.getDestinationAccount() != null ? transaction.getDestinationAccount().getId() : null)
+                .destinationAccountId(
+                        transaction.getDestinationAccount() != null ? transaction.getDestinationAccount().getId()
+                                : null)
                 .build();
     }
 
     @Override
     @Transactional
     public void createTransaction(TransactionRequest transactionRequest, Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         Account sourceAccount = accountRepository.findById(transactionRequest.getAccountId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found with id: " + transactionRequest.getAccountId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Account not found with id: " + transactionRequest.getAccountId()));
 
         Account destinationAccount = null;
         if (transactionRequest.getTransactionType() == TransactionType.TRANSFER) {
             if (transactionRequest.getDestinationAccountId() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Destination account is required for TRANSFER");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Destination account is required for TRANSFER");
             }
             destinationAccount = accountRepository.findById(transactionRequest.getDestinationAccountId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Destination account not found"));
+                    .orElseThrow(
+                            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Destination account not found"));
         }
 
         Transaction transaction = Transaction.builder()
@@ -108,5 +116,20 @@ public class TransactionServiceImpl implements TransactionService {
         Page<TransactionDTO> transactionDTOPage = transactions.map(this::convertToDTO);
 
         return new PagedResponse<>(transactionDTOPage);
+    }
+
+    @Override
+    public List<TransactionDTO> getTransactionById(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User not found with id: " + userId));
+
+        List<Transaction> transactions = transactionRepository.findAllByUserId(userId);
+
+        List<TransactionDTO> transactionDTOs = transactions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return transactionDTOs;
     }
 }

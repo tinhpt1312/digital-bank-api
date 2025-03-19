@@ -1,29 +1,43 @@
 package org.tinhpt.digital.service.impl;
 
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import org.tinhpt.digital.dto.AccountDTO;
-import org.tinhpt.digital.dto.request.*;
-import org.tinhpt.digital.dto.response.BankResponse;
-import org.tinhpt.digital.entity.Account;
-import org.tinhpt.digital.entity.AccountRequest;
-import org.tinhpt.digital.entity.User;
-import org.tinhpt.digital.entity.common.Audit;
-import org.tinhpt.digital.repository.AccountRepository;
-import org.tinhpt.digital.repository.AccountRequestRepository;
-import org.tinhpt.digital.repository.UserRepository;
-import org.tinhpt.digital.service.AccountService;
-import org.tinhpt.digital.service.TransactionService;
-import org.tinhpt.digital.type.*;
-
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.tinhpt.digital.dto.AccountDTO;
+import org.tinhpt.digital.dto.request.CreateAccount;
+import org.tinhpt.digital.dto.request.QueryAccountDTO;
+import org.tinhpt.digital.dto.request.TransactionRequest;
+import org.tinhpt.digital.dto.request.TransferBankDTO;
+import org.tinhpt.digital.dto.request.UpdateAccountDTO;
+import org.tinhpt.digital.dto.request.UpdateBalanceAccountDTO;
+import org.tinhpt.digital.dto.response.BankResponse;
+import org.tinhpt.digital.entity.Account;
+import org.tinhpt.digital.entity.AccountRequest;
+import org.tinhpt.digital.entity.Transaction;
+import org.tinhpt.digital.entity.User;
+import org.tinhpt.digital.entity.common.Audit;
+import org.tinhpt.digital.repository.AccountRepository;
+import org.tinhpt.digital.repository.AccountRequestRepository;
+import org.tinhpt.digital.repository.TransactionRepository;
+import org.tinhpt.digital.repository.UserRepository;
+import org.tinhpt.digital.service.AccountService;
+import org.tinhpt.digital.service.StatementService;
+import org.tinhpt.digital.service.TransactionService;
+import org.tinhpt.digital.type.AccountStatus;
+import org.tinhpt.digital.type.AccountType;
+import org.tinhpt.digital.type.RequestStatus;
+import org.tinhpt.digital.type.RequestType;
+import org.tinhpt.digital.type.TransactionType;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +47,8 @@ public class AccountServiceImpl implements AccountService {
         private final UserRepository userRepository;
         private final AccountRequestRepository accountRequestRepository;
         private final TransactionService transactionService;
+        private final StatementService statementService;
+        private final TransactionRepository transactionRepository;
 
         private String generationAccountNumber() {
                 Random random = new Random();
@@ -295,7 +311,7 @@ public class AccountServiceImpl implements AccountService {
 
                 TransactionRequest transactionRequest = TransactionRequest.builder()
                                 .currency(sourceAccount.getCurrency())
-                                .description("Transfer money from " + sourceAccount.getAccountNumber() + " to"
+                                .description("Transfer money from " + sourceAccount.getAccountNumber() + " to " + " "
                                                 + targetAccount.getAccountNumber() + " with amount "
                                                 + transferBankDTO.getAmount()
                                                 + " VND")
@@ -310,6 +326,36 @@ public class AccountServiceImpl implements AccountService {
                 return BankResponse.builder()
                                 .responseCode("202")
                                 .responseMessage("Transfer money successfully!")
+                                .build();
+        }
+
+        @Override
+        public BankResponse sendAccountStatementByEmail(Long accountId, Date fromDate, Date toDate,
+                        Long userId) throws IOException {
+                Account account = findAccountById(accountId);
+
+                if (account.getUser().getId() != userId) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                                        "User does not have permission for this account");
+                }
+
+                List<Transaction> transactions;
+                if (fromDate != null && toDate != null) {
+                        transactions = transactionRepository.findTransactionsByAccountAndDateRange(account.getId(),
+                                        fromDate,
+                                        toDate);
+                } else {
+                        transactions = account.getTransactions();
+                }
+
+                User user = account.getUser();
+                String email = user.getEmail();
+
+                statementService.sendAccountStatementByEmail(account, transactions, email);
+
+                return BankResponse.builder()
+                                .responseCode("202")
+                                .responseMessage("Export statement is successfullt! pls check your email")
                                 .build();
         }
 

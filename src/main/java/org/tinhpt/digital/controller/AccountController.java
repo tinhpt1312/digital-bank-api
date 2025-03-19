@@ -3,6 +3,7 @@ package org.tinhpt.digital.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.tinhpt.digital.annotation.CurrentUser;
 import org.tinhpt.digital.annotation.RequirePermission;
@@ -18,6 +19,8 @@ import org.tinhpt.digital.share.TokenPayload;
 import org.tinhpt.digital.type.PermissionsAction;
 import org.tinhpt.digital.type.SubjectName;
 
+import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -58,6 +61,18 @@ public class AccountController {
         Long userId = tokenPayload.getUserId();
 
         return accountService.createAccount(createAccount, userId);
+    }
+
+    @PostMapping("/statement/{id}")
+    public BankResponse sendAccountStatementByEmail(
+            @PathVariable("id") Long accountId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate,
+            @CurrentUser TokenPayload tokenPayload) throws IOException {
+
+        Long userId = tokenPayload.getUserId();
+
+        return accountService.sendAccountStatementByEmail(accountId, fromDate, toDate, userId);
     }
 
     @PatchMapping("/{id}")

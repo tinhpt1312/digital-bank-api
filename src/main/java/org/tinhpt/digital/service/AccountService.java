@@ -8,6 +8,8 @@ import org.tinhpt.digital.dto.request.UpdateAccountDTO;
 import org.tinhpt.digital.dto.request.UpdateBalanceAccountDTO;
 import org.tinhpt.digital.dto.response.BankResponse;
 
+import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 public interface AccountService {
@@ -35,4 +37,7 @@ public interface AccountService {
     BankResponse submitUnlockAccountRequest(Long id, Long userId);
 
     BankResponse transferBank(TransferBankDTO transferBankDTO, Long userId);
+
+    BankResponse sendAccountStatementByEmail(Long accountId, Date fromDate, Date toDate,
+            Long userId) throws IOException;
 }

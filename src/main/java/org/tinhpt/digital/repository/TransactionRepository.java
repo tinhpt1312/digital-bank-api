@@ -1,7 +1,7 @@
 package org.tinhpt.digital.repository;
 
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,4 +30,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT t FROM Transaction t JOIN t.account a WHERE a.user.id = :userId AND t.audit.deletedAt IS NULL ORDER BY t.id DESC")
     List<Transaction> findAllByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT t FROM Transaction t WHERE t.account.id = :id AND t.audit.createdAt BETWEEN :fromDate AND :toDate and t.audit.deletedAt IS NULL")
+    List<Transaction> findTransactionsByAccountAndDateRange(@Param("id") Long id, @Param("fromDate") Date fromDate,
+            @Param("toDate") Date toDate);
+
 }

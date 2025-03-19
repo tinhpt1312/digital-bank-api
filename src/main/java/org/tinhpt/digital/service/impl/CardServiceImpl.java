@@ -94,10 +94,12 @@ public class CardServiceImpl implements CardService {
         return expiryDate;
     }
 
+    @SuppressWarnings("unused")
     private String maskCardNumber(String cardNumber) {
         return "XXXX-XXXX-XXXX-" + cardNumber.substring(cardNumber.length() - 4);
     }
 
+    @SuppressWarnings("unused")
     private String maskCVV() {
         return "***";
     }

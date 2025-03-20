@@ -42,10 +42,10 @@ public class CardServiceImpl implements CardService {
         return CardDTO.builder()
                 .accountId(card.getId())
                 .accountNumber(card.getCardNumber())
-                .cardNumber(card.getCardNumber())
+                .cardNumber(maskCardNumber(card.getCardNumber()))
                 .cardType(CardType.valueOf(card.getCardType()))
                 .expiryDate(card.getExpiryDate())
-                .cvv(card.getCvv())
+                .cvv(maskCVV())
                 .status(CardStatus.valueOf(card.getStatus()))
                 .build();
     }
@@ -55,18 +55,48 @@ public class CardServiceImpl implements CardService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
-    private Account getAccountById(Long accountId) {
-        return accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    private Account findAccountById(Long id) {
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Account not found with id: " + id));
+    }
+
+    private CardDTO convertToDTOWithFullDetails(Card card) {
+        return CardDTO.builder()
+                .id(card.getId())
+                .accountId(card.getAccount().getId())
+                .accountNumber(card.getAccount().getAccountNumber())
+                .cardNumber(card.getCardNumber())
+                .cardType(CardType.valueOf(card.getCardType()))
+                .expiryDate(card.getExpiryDate())
+                .cvv(card.getCvv())
+                .status(CardStatus.valueOf(card.getStatus()))
+                .build();
     }
 
     private String generateCardNumber() {
         Random random = new Random();
         StringBuilder sb = new StringBuilder("4");
 
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 14; i++) {
             sb.append(random.nextInt(10));
         }
+
+        int sum = 0;
+        boolean alternate = false;
+        for (int i = sb.length() - 1; i >= 0; i--) {
+            int n = Integer.parseInt(sb.substring(i, i + 1));
+            if (alternate) {
+                n *= 2;
+                if (n > 9) {
+                    n = (n % 10) + 1;
+                }
+            }
+            sum += n;
+            alternate = !alternate;
+        }
+        int checkDigit = (10 - (sum % 10)) % 10;
+        sb.append(checkDigit);
 
         String cardNumber = sb.toString();
 
@@ -94,12 +124,10 @@ public class CardServiceImpl implements CardService {
         return expiryDate;
     }
 
-    @SuppressWarnings("unused")
     private String maskCardNumber(String cardNumber) {
         return "XXXX-XXXX-XXXX-" + cardNumber.substring(cardNumber.length() - 4);
     }
 
-    @SuppressWarnings("unused")
     private String maskCVV() {
         return "***";
     }
@@ -116,15 +144,11 @@ public class CardServiceImpl implements CardService {
     }
 
     @Override
-    public CardDTO createCard(CreateCardRequest cardRequest, Long userId) {
+    public BankResponse createCard(CreateCardRequest cardRequest, Long userId) {
 
         User user = getUserById(userId);
 
-        Account account = getAccountById(cardRequest.getAccountId());
-
-        if (!account.getUser().getId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account does not belong to user");
-        }
+        Account account = findAccountById(cardRequest.getAccountId());
 
         Card card = Card.builder()
                 .account(account)
@@ -141,7 +165,11 @@ public class CardServiceImpl implements CardService {
 
         Card savedCard = cardRepository.save(card);
 
-        return convertToDTO(savedCard);
+        return BankResponse.builder()
+                .responseCode("200")
+                .responseMessage("Card created successfully")
+                .data(convertToDTOWithFullDetails(savedCard))
+                .build();
     }
 
     @Override

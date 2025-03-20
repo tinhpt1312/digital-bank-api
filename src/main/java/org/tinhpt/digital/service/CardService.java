@@ -9,7 +9,7 @@ import org.tinhpt.digital.dto.request.QueryCardDTO;
 import org.tinhpt.digital.dto.response.BankResponse;
 
 public interface CardService {
-    CardDTO createCard(CreateCardRequest cardRequest, Long userId);
+    BankResponse createCard(CreateCardRequest cardRequest, Long userId);
 
     PagedResponse<CardDTO> getCardByQuery(QueryCardDTO queryCardDTO);
 

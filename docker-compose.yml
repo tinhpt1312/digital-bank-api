@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - spring.datasource.url=jdbc:mysql://db:3306/digital_bank
+      - spring.datasource.username=root
+      - spring.datasource.password=12345678
+      - spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+      - spring.jpa.hibernate.ddl-auto=update
+      - spring.datasource.hikari.initialization-fail-timeout=30000
+    depends_on:
+      db:
+        condition: service_healthy
+    
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=12345678
+      - MYSQL_DATABASE=digital_bank
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database-dump.sql:/docker-entrypoint-initdb.d/database-dump.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p12345678"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql-data:

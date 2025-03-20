@@ -174,7 +174,7 @@ public class AccountServiceImpl implements AccountService {
                                 .amount(updateBalanceAccountDTO.getAmount())
                                 .transactionType(TransactionType.WITHDRAWAL)
                                 .currency(account.getCurrency())
-                                .description("Deposit for account number: " + account.getAccountNumber())
+                                .description("Withdrawal for account number: " + account.getAccountNumber())
                                 .accountId(account.getId())
                                 .destinationAccountId(null)
                                 .build();
@@ -240,6 +240,13 @@ public class AccountServiceImpl implements AccountService {
                 if (!account.getUser().getId().equals(userId)) {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                                         "User does not have permission for this account");
+                }
+
+                if (updateBalanceAccountDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                        return BankResponse.builder()
+                                        .responseCode("404")
+                                        .responseMessage("Amount must be positive for desposit requests")
+                                        .build();
                 }
 
                 AccountRequest accountRequest = AccountRequest.builder()

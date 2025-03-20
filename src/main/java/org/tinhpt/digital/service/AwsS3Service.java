@@ -5,6 +5,7 @@ import org.tinhpt.digital.dto.response.BankResponse;
 
 public interface AwsS3Service {
     BankResponse uploadFile(MultipartFile multipartFile);
+
     BankResponse generatePresignedUrl(String name);
 
     BankResponse deletedFile(String fileName);
